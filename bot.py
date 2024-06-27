@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import json
+import os 
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -25,6 +26,23 @@ role_ids = {
     "Spazio Captain": 1253739352861839451
 }
 
+# Archivo JSON para guardar los datos de los usuarios
+data_file = 'users_data.json'
+
+# Cargar datos desde el archivo JSON
+if os.path.exists(data_file):
+    with open(data_file, 'r') as f:
+        try:
+            users = json.load(f)
+        except json.JSONDecodeError:
+            users = {}
+else:
+    users = {}
+
+def save_data():
+    with open(data_file, 'w') as f:
+        json.dump(users, f, indent=4)
+
 users = {}
 
 def get_xp_required(level):
@@ -37,19 +55,19 @@ async def assign_role(member, old_level, new_level):
     guild = member.guild
     new_role_name = None
     old_role_name = None
-    
+
     # Buscar el nombre del rol anterior y el nuevo
     for level_range, role_name in roles_per_level.items():
         if new_level in level_range:
             new_role_name = role_name
             break
-    
+
     # Obtener el rol anterior del usuario
     for level_range, role_name in roles_per_level.items():
         if old_level in level_range:
             old_role_name = role_name
             break
-    
+
     if not new_role_name:
         new_role_name = "Spazio Captain"  # Default role if level exceeds 60
 
@@ -94,11 +112,11 @@ async def update_xp(user_id, guild, message_content):
         users[user_id] = {"xp": 0, "level": 1}
 
     xp_earned = 0
-    
+
     # Calcular XP basado en la longitud del mensaje
     if len(message_content) > 5:
         xp_earned = 5
-    
+
     users[user_id]["xp"] += xp_earned
 
     old_level = users[user_id]["level"]
@@ -119,7 +137,7 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot:
         return
-    
+
     await update_xp(message.author.id, message.guild, message.content)
     await bot.process_commands(message)
 
@@ -175,15 +193,14 @@ async def rank(ctx, member: discord.Member = None):
     member = member or ctx.author
     user_data = users.get(member.id, {"xp": 0, "level": 1})
     role_name = None
-    
+
     for level_range, role in roles_per_level.items():
         if user_data['level'] in level_range:
             role_name = role
             break
-    
-    if not role_name:
-        role_name = "Spazio Captain"  # Default role if level exceeds 60
 
+    if not role_name:
+        role_name = "Spazio Captain"  
     await ctx.send(f"{member.mention} está en el nivel {user_data['level']} y su rango es {role_name}.")
 
-bot.run("MTI1MDE2Mzk1ODY4MjQ4NDk5OA.GWpGi7.wqvii6IfuYaTlqVhZ_bq41Mmr5iFen4c1SPR9I")
+bot.run("MTI1MDE2Mzk1ODY4MjQ4NDk5OA.GLNVVc.c5nVP75vBfbdjE5EaDDajCX0AZel46FM9Lzc9U")
